@@ -70,6 +70,18 @@ public class ZdmCrawler {
         HashSet<String> blackWords = Utils.readFile("./black_words.txt");
         blackWords.removeIf(StringUtils::isBlank);
 
+        //白名单过滤，仅发送包含白名单中的商品优惠信息
+        HashSet<String> whiteWords = Utils.readFile("./white_words.txt");
+        whiteWords.removeIf(StringUtils::isBlank);
+        if (whiteWords.isEmpty()) {
+            System.out.println("whiteWords is empty, running in blackWords mode.");
+        } else {
+            System.out.println("whiteWords is not empty, running in whiteWords mode.");
+            for (String word : whiteWords) {
+                System.out.println(word);
+            }
+        }
+
         //已推送的优惠信息id
         Set<String> pushedIds;
         try {
