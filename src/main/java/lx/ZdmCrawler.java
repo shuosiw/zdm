@@ -70,6 +70,20 @@ public class ZdmCrawler {
         HashSet<String> blackWords = Utils.readFile("./black_words.txt");
         blackWords.removeIf(StringUtils::isBlank);
 
+        //已推送的优惠信息id
+        Set<String> pushedIds;
+        try {
+            new File("./logs/").mkdirs();
+            pushedIds = Files.walk(Paths.get("./logs/"), 2)
+                    .filter(p -> !Files.isDirectory(p))
+                    .filter(p -> LocalDate.parse(p.getParent().getFileName().toString()).isAfter(LocalDate.now().minusMonths(1))) //统计一个月内的数据,这也意味着相同的优惠信息,如果一个月后再次登上排行榜,则会被重复推送.不过这种场景比较少,在排行榜上的一般是比较新的内容
+                    .map(Path::toFile)
+                    .flatMap(f -> Utils.readFile(f.getPath()).stream()).collect(Collectors.toSet());
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("读取logs目录失败");
+        }
+
         //白名单过滤，仅发送包含白名单中的商品优惠信息
         HashSet<String> whiteWords = Utils.readFile("./white_words.txt");
         whiteWords.removeIf(StringUtils::isBlank);
@@ -95,21 +109,6 @@ public class ZdmCrawler {
                             && !pushedIds.contains(z.getArticleId()) //不是已经推送过的
             ));
         }
-
-        //已推送的优惠信息id
-        Set<String> pushedIds;
-        try {
-            new File("./logs/").mkdirs();
-            pushedIds = Files.walk(Paths.get("./logs/"), 2)
-                    .filter(p -> !Files.isDirectory(p))
-                    .filter(p -> LocalDate.parse(p.getParent().getFileName().toString()).isAfter(LocalDate.now().minusMonths(1))) //统计一个月内的数据,这也意味着相同的优惠信息,如果一个月后再次登上排行榜,则会被重复推送.不过这种场景比较少,在排行榜上的一般是比较新的内容
-                    .map(Path::toFile)
-                    .flatMap(f -> Utils.readFile(f.getPath()).stream()).collect(Collectors.toSet());
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException("读取logs目录失败");
-        }
-
 
         zdms.forEach(z -> System.out.println(z.getArticleId() + " | " + z.getTitle()));
 
